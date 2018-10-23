@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link href="css/bootstrap.3.3.7.css" rel="stylesheet">
+    <link rel="stylesheet" href="ztree/css/bootstrapStyle/bootstrapStyle.css" type="text/css">
+    <script type="text/javascript" src="js/jquery-1.11.1.js"></script>
+    <script type="text/javascript" src="js/bootstrap3.3.7.min.js"></script>
+	<script type="text/javascript" src="ztree/js/jquery.ztree.core.js"></script>
+	<script type="text/javascript" src="ztree/js/jquery.ztree.excheck.js"></script>
+	<script type="text/javascript" src="ztree/js/jquery.ztree.exedit.js"></script>
+	<SCRIPT type="text/javascript">
+    
+    $(function() {
+		//初始化ztree数据
+		var data = [
+					{name:"500个节点", id:"1", isParent:true},
+					{name:"1000个节点", id:"2", isParent:true},
+					{name:"2000个节点", id:"3",isParent:true}
+				];
+		queryHandler(data);
+	});
+	
+	var setting = {
+			async: {
+				enable: true,
+				url: getUrl
+			},
+			data: {
+				simpleData: {
+					enable: true
+				}
+			},
+			view: {
+				showLine : false,
+				addDiyDom : addDiyDom,
+				expandSpeed: ""
+			},
+			callback: {
+				beforeExpand: beforeExpand,
+				onAsyncError: onAsyncError
+			}
+		};
+
+		var setting2 = {
+			async: {
+				enable: true,
+				url: getUrl
+			},
+			data: {
+				simpleData: {
+					enable: true
+				}
+			},
+			view: {
+				dblClickExpand: false,
+				expandSpeed: ""
+			},
+			data: {
+				simpleData: {
+					enable: true
+				}
+			},
+			callback: {
+				onClick: onClick,
+				beforeExpand: beforeExpand2,
+				onAsyncError: onAsyncError2
+			}
+		};
+	
+		var perCount = 100, perTime = 100;
+		function getUrl(treeId, treeNode) {
+			var param = "id="+treeNode.id;
+			return "../student/getNodesForBigData.json?" + param;
+		}
+		//ztree1
+		function beforeExpand(treeId, treeNode) {
+			if (!treeNode.isAjaxing) {
+				ajaxGetNodes(treeNode, "refresh");
+				return true;
+			} else {
+				alert("正在下载数据中，请稍后展开节点。。。");
+				return false;
+			}
+		}
+		function onAsyncSuccess(event, treeId, treeNode, msg) {
+			if (!msg || msg.length == 0) {
+				return;
+			}
+		}
+		function onAsyncError(event, treeId, treeNode, XMLHttpRequest, textStatus, errorThrown) {
+			var zTree = $.fn.zTree.getZTreeObj("ztree1");
+			alert("异步获取数据出现异常。");
+			treeNode.icon = "";
+			zTree.updateNode(treeNode);
+		}
+		function ajaxGetNodes(treeNode, reloadType) {
+			var zTree = $.fn.zTree.getZTreeObj("ztree1");
+			if (reloadType == "refresh") {
+				zTree.updateNode(treeNode);
+			}
+			zTree.reAsyncChildNodes(treeNode, reloadType, true);
+			console.log(treeNode);
+		}
+		
+		//ztree2
+		function beforeExpand2(treeId, treeNode) {
+			if (!treeNode.isAjaxing) {
+				ajaxGetNodes2(treeNode, "refresh");
+				return true;
+			} else {
+				alert("正在下载数据中，请稍后展开节点。。。");
+				return false;
+			}
+		}
+		function onAsyncError2(event, treeId, treeNode, XMLHttpRequest, textStatus, errorThrown) {
+			var zTree = $.fn.zTree.getZTreeObj("ztree2");
+			alert("异步获取数据出现异常。");
+			treeNode.icon = "";
+			zTree.updateNode(treeNode);
+		}
+		function ajaxGetNodes2(treeNode, reloadType) {
+			var zTree = $.fn.zTree.getZTreeObj("ztree2");
+			if (reloadType == "refresh") {
+				zTree.updateNode(treeNode);
+			}
+			zTree.reAsyncChildNodes(treeNode, reloadType, true);
+		}
+
+	  function addDiyDom(treeId, treeNode) {
+			var spaceWidth = 15;
+			var liObj = $("#" + treeNode.tId);
+			var aObj = $("#" + treeNode.tId + "_a");
+			var switchObj = $("#" + treeNode.tId + "_switch");
+			var icoObj = $("#" + treeNode.tId + "_ico");
+			var spanObj = $("#" + treeNode.tId + "_span");
+			aObj.attr('title', '');
+			aObj
+					.append('<div class="divTd swich fnt" style="width:30%"></div>');
+			var div = $(liObj).find('div').eq(0);
+			//从默认的位置移除
+			switchObj.remove();
+			spanObj.remove();
+			icoObj.remove();
+			//在指定的div中添加
+			div.append(switchObj);
+			div.append(spanObj);
+			//隐藏了层次的span
+			var spaceStr = "<span style='height:1px;display: inline-block;width:"
+					+ (spaceWidth * treeNode.level) + "px'></span>";
+			switchObj.before(spaceStr);
+			//图标垂直居中
+			icoObj.css("margin-top", "9px");
+			switchObj.after(icoObj);
+			var editStr = '';
+			//宽度需要和表头保持一致
+			editStr += '<div class="divTd" style="width:58%">'
+				+ (treeNode.dec == null ? '' : treeNode.dec)
+				+ '</div>';
+			editStr += '<div class="divTd" style="width:10%">' + opt(treeNode)
+					+ '</div>';
+			aObj.append(editStr);
+		}
+	  
+		//初始化列表
+		function queryHandler(zTreeNodes) {
+			//初始化树
+			$.fn.zTree.init($("#ztree1"), setting, zTreeNodes);
+			$.fn.zTree.init($("#ztree2"), setting2, zTreeNodes);
+			//添加表头
+			var li_head = ' <li class="head"><a><div class="divTd" style="width:30%">字典名称</div><div class="divTd" style="width:58%">字典编码</div><div class="divTd" style="width:10%">操作</div></a></li>';
+			var rows = $("#ztree1").find('li');
+			if (rows.length > 0) {
+				rows.eq(0).before(li_head);
+			} else {
+				$("#ztree1").append(li_head);
+				$("#ztree1").append('<li ><div style="text-align: center;line-height: 30px;" >无符合条件数据</div></li>');
+			}
+		}
+		
+		function opt(treeNode) {
+			var htmlStr = '';
+			htmlStr += '<button type="button" class="btn btn-info" title="修改"  data-toggle="modal" data-target="#editModal")" >修 改</button>&nbsp&nbsp&nbsp';
+			htmlStr += '&nbsp<button type="button" class="btn btn-danger "  title="删除" )">删 除</button>';
+			
+			return htmlStr;
+		}
+		
+		//modal中ztree的点击操作
+		function onClick(e, treeId, treeNode) {
+			var zTree = $.fn.zTree.getZTreeObj("ztree2"),
+			nodes = zTree.getSelectedNodes();
+			var v = "";
+			var value = "";
+			nodes.sort(function compare(a,b){return a.id-b.id;});
+			v = nodes[0].id;
+			value = nodes[0].name;
+			var cityObj = $("#ztreeInput");
+			cityObj.attr("val", v);
+			cityObj.attr("value",value);
+		}
+
+		function showMenu() {
+			var cityObj = $("#ztreeInput");
+			var cityOffset = $("#ztreeInput").offset();
+			$("#menuContent").slideDown("fast");
+
+			$("body").bind("mousedown", onBodyDown);
+		}
+		function hideMenu() {
+			$("#menuContent").fadeOut("fast");
+			$("body").unbind("mousedown", onBodyDown);
+		}
+		function onBodyDown(event) {
+			if (!(event.target.id == "ztreeInput" || event.target.id == "menuContent" || $(event.target).parents("#menuContent").length>0)) {
+				hideMenu();
+			}
+		}
+			
+		
+    </script>
+    
+<style>
+body {
+	overflow:auto;
+}
+
+.ztree * {
+	font-family: "微软雅黑", "宋体", Arial, "Times New Roman", Times, serif;
+}
+
+#ztree1  {
+	padding: 0px;
+	padding-top: 35px;
+	border-left: 1px solid #E3E3E3;
+	border-right: 1px solid #E3E3E3;
+	border-bottom: 1px solid #E3E3E3;
+}
+
+#ztree1  li a {
+	vertical-align: middle;
+	height: 32px;
+	padding: 0px;
+}
+
+#ztree1  li>a {
+	width: 98.6%;
+}
+
+#ztree1  li a.curSelectedNode {
+	padding-top: 0px;
+	background-color: #FFE6B0;
+	border: 1px #FFB951 solid;
+	opacity: 1;
+	height: 32px;
+}
+
+#ztree1  li ul {
+	padding-left: 0px
+}
+
+#ztree1  div.divTd span {
+	line-height: 30px;
+	vertical-align: middle;
+}
+
+#ztree1  div.divTd {
+	height: 100%;
+	line-height: 30px;
+	border-top: 1px solid #E3E3E3;
+	border-left: 1px solid #E3E3E3;
+	text-align: center;
+	display: inline-block;
+	color: #6c6c6c;
+	overflow: hidden;
+}
+
+#ztree1  div.divTd:first-child {
+	text-align: left;
+	text-indent: 10px;
+	border-left: none;
+}
+
+#ztree1  .head {
+	background: #E8EFF5;
+}
+
+#ztree1  .head div.divTd {
+	color: #393939;
+	font-weight: bold;
+}
+
+#ztree1  .ck {
+	padding: 0 5px;
+	margin: 2px 3px 7px 3px;
+}
+
+li:nth-child(odd) {
+	background-color: #F5FAFA;
+}
+
+li:nth-child(even) {
+	background-color: #FFFFFF;
+}
+</style>
+</head>
+<body>
+	<div>
+    	<ul id="ztree1" class="ztree"></ul>
+    </div>
+    
+    <!-- 编辑窗口 -->
+	<div class="modal fade" id="editModal" tabindex="-1" role="dialog"
+		aria-labelledby="myModalLabel" aria-hidden="true" >
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-hidden="true">×</button>
+					<h3 id="myModalLabel" >编辑类目</h3>
+				</div>
+				<div class="modal-body"  style="height:350px; overflow:auto;">
+
+					<table class="table table-bordered table-striped" width="800px">
+						<tr>
+							<td class="col-md-2" style="width: 80px" >类目名称</td>
+							<td ><input style="height: 35px" class="col-md-6"
+							id="modalNameInput"	placeholder="类目名称" ng-model="addModalEntity.name" ng-blur="checkName()">&nbsp &nbsp <font id="nameColor" color="grey"><span>类目名称在1~20位字符（不能重复）</span></font></td>
+						</tr>
+						<tr>
+							<td>置顶首页</td>
+							<td>
+								<div>
+									<select style="width:100px" ng-model="addModalEntity.isTop" ng-options="item.value as item.name for item in options"></select>
+									&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
+									&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
+									&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp使用寿命&nbsp&nbsp<input type="number" ng-model="addModalEntity.life">
+								</div>
+							</td>
+							
+						</tr>
+						<tr>
+							<td>排  序</td>
+							<td>
+								<input class="form-control" >
+							</td>
+						</tr>
+						<tr>
+							<td>类目说明</td>
+							<td>
+								<input class="form-control" ng-model="addModalEntity.dec">
+							</td>
+						</tr>
+						
+						<tr>
+							<td>上级节点</td>
+							<td><input id="ztreeInput" class="form-control "
+							 readOnly val="{{addModalEntity.pId}}" value="{{addModalEntityParent.name}}"  onclick="showMenu();return false;" placeholder="请点击选择上级类目" >
+							 </input>
+								<div id="menuContent" class="menuContent" style="display:none;">
+									<ul id="ztree2" class="ztree">
+
+									</ul>
+								</div>
+							</td>
+						</tr>
+						<tr>
+							<td>最小价格</td>
+							<td>
+							<div>
+								<input type="number" ng-model="addModalEntity.minPrice"> &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp 最大价格 &nbsp
+								<input type="number" ng-model="addModalEntity.maxPrice">
+							</div>
+							</td>
+						</tr>
+						<tr>
+							<td>链接路径</td>
+							<td>
+								<input class="form-control" >
+							</td>
+						</tr>
+						<tr>
+							<td>上传图片</td>
+							<td >
+								<div>
+									<input type="file" style="width: 300px">
+								</div>
+							</td>
+						</tr>
+
+					</table>
+
+				</div>
+				<div class="modal-footer">
+					<button class="btn btn-success"  ng-click="save()">保存</button>
+					<button class="btn btn-default" data-dismiss="modal"
+						aria-hidden="true">关闭</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>
